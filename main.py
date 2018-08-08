@@ -1,7 +1,6 @@
 from google.appengine.ext import ndb
 from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
-from binascii import hexlify
 import webapp2
 import json
 import urllib
@@ -24,10 +23,6 @@ STATE_STRING = ""
 def get_random_state():
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
 
-def generate_api_key():
-    api_length = 16
-    key = hexlify(os.urandom(api_length))
-    return key.decode()
 
 class HomePageHandler(webapp2.RequestHandler):
     def get(self):
