@@ -1,6 +1,7 @@
 from google.appengine.ext import ndb
 from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
+import routes.user
 import webapp2
 import json
 import urllib
@@ -26,8 +27,8 @@ def get_random_state():
 
 class HomePageHandler(webapp2.RequestHandler):
     def get(self):
-        global STATE_STRING
         STATE_STRING = get_random_state()
+        app.registry["state"] = STATE_STRING
         url = OAUTH_URL + "?" + "response_type=code&" + \
             "client_id=" + CLIENT_ID + "&" + \
             "redirect_uri=" + REDIRECT_URI + "&" + \
@@ -36,12 +37,13 @@ class HomePageHandler(webapp2.RequestHandler):
         path = os.path.join(os.path.dirname(__file__), 'templates/index.html')
         self.response.out.write(template.render(path, template_values))
 
+
 class OAuthHandler(webapp2.RequestHandler):
     def get(self):
         state = self.request.get('state')
         code = self.request.get('code')
-        if state != STATE_STRING:
-            self.resposne.write("ERROR 403: FORBIDDEN")
+        if state != app.registry["state"]:
+            self.response.write("ERROR 403: FORBIDDEN")
             self.response.set_status(403)
             return
         post_header = {'Content-type': 'application/x-www-form-urlencoded'}
@@ -67,8 +69,18 @@ class OAuthHandler(webapp2.RequestHandler):
             headers=access_header
         )
         accessed_properties = json.loads(user_result.content)
+        print accessed_properties
+        email = accessed_properties['emails'][0]['value']
+        # check if user has account / api key already
+        api_key = routes.user.retrieve_api_key(email)
+        if not api_key:
+            # generate API_KEY for user
+            api_key = routes.user.create_user(email)
+        # append api key so template can receive
+        accessed_properties.update({'api_key': api_key})
         template_values = {'object': accessed_properties}
-        path = os.path.join(os.path.dirname(__file__), 'templates/grant_api_key.html')
+        path = os.path.join(os.path.dirname(__file__),
+                            'templates/grant_api_key.html')
         self.response.out.write(template.render(path, template_values))
 
 # [START patch]

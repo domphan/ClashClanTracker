@@ -25,3 +25,8 @@ def create_user(email):
     new_user.put()
     return new_user.api_key
     
+def retrieve_api_key(email):
+    for user in User.query(User.email == email):
+        return user.api_key
+    return ''
+    

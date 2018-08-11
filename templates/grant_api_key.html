@@ -3,14 +3,14 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Oauth Results</title>
+    <title>API KEY</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B"
         crossorigin="anonymous">
 </head>
 
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="https://oauth2-recreation.appspot.com/">OAuth Implementation</a>
+        <a class="navbar-brand" href="https://oauth2-recreation.appspot.com/">Clash Clan Tracker</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
             aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -31,7 +31,7 @@
     </nav>
     <div class="container-fluid">
         <h1>
-            <strong>OAuth Demo</strong>
+            <strong>API key</strong>
         </h1>
         <h4>Your info</h4>
         <div class="card" style="width: 15rem;">
@@ -40,20 +40,11 @@
                 <h5 class="card-title">{{object.emails.0.value}}</h5>
                 <p class="card-text">Here's your information</p>
                 {% if object.name.givenName %}
-                <p>First Name: {{object.name.givenName}}</p>
+                <p>Welcome {{object.name.givenName}},</p>
                 {% else %}
-                <p>User has no first name</p>
-                {% endif %} {% if object.name.familyName %}
-                <p>Last Name: {{object.name.familyName}}</p>
-                {% else %}
-                <p>User has no last name</p>
-                {% endif %}
-                <p>State: {{state}}</p>
-                {% if object.url %}
-                <a href="{{object.url}}" class="btn btn-primary">View Google Plus Profile</a>
-                {% else %}
-                <a href="https://oauth2-recreation.appspot.com/" class="btn btn-danger">No Google Plus Account</a>
-                {% endif %}
+                <p>Welcome</p>
+                {% endif %} 
+                <p>API Key: {{object.api_key}}</p>
             </div>
         </div>
         <br>
