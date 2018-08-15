@@ -82,7 +82,7 @@ class ClanHandler(webapp2.RequestHandler):
                         # does not exist
                         self.response.status = 404
                         self.response.write(
-                            "ERORR: " + selected_clan + " does not exist")    
+                            "ERORR: clan does not exist")    
                 else:
                 # return empty object if clan not created yet
                     clan_dict = {}
