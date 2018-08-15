@@ -37,6 +37,17 @@ def get_owner_id(api_key):
         return user.id
     return ""
 
+def clear_clan_player(clan_tag):
+    for player in Player.query(Player.clan == clan_tag):
+        player.clan = None
+        player.put()
+
+def clear_clan_user(api_key):
+    for user in User.query(User.api_key == api_key):
+        user.clan_id = None
+        user.clan_tag = None
+        user.put()
+
 class Clan(ndb.Model):
     id = ndb.StringProperty()
     owner_id = ndb.StringProperty()
@@ -187,3 +198,26 @@ class ClanHandler(webapp2.RequestHandler):
 
     # needs to handle removing clans from players
     def delete(self, clan_id=None):
+        if authenticate_user(self.request.headers):
+            api_key = self.request.headers['auth']
+        else:
+            self.response.status = 400
+            self.response.write("ERROR: CANNOT AUTHENTICATE")
+        if clan_id:
+            selected_clan = ndb.Key(urlsafe=clan_id).get()
+            if selected_clan:
+                # release clan from individual players
+                clear_clan_player(selected_clan.clan_tag)
+                # remove clan from user
+                clear_clan_user(api_key)
+                selected_clan.key.delete()
+                self.response.write(
+                    "Deleted clan :" + str(clan_id) + " cleared players' clan" \
+                    + " and removed clan from user account"
+                    )
+            else:
+                self.response.status = 400
+                self.response.write("Error: invalid clan id")
+        else:
+            self.response.status = 400
+            self.response.write("Error: no clan id inputted")
