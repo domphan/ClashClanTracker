@@ -12,7 +12,8 @@ def generate_api_key():
 class User(ndb.Model):
     id = ndb.StringProperty()
     email = ndb.StringProperty(required=True)
-    clan = ndb.StringProperty()
+    clan_id = ndb.StringProperty()
+    clan_tag = ndb.StringProperty()
     api_key = ndb.StringProperty(required=True)
 
 def create_user(email):

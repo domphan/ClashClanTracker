@@ -6,7 +6,12 @@ class Player(ndb.Model):
     id = ndb.StringProperty()
     tag = ndb.StringProperty(required=True)
     name = ndb.StringProperty(required=True)
-    stats_clan_war = ndb.IntegerProperty(required=True)
-    participation_clan_war = ndb.IntegerProperty(required=True)
     trophies = ndb.IntegerProperty(required=True)
+    donations = ndb.IntegerProperty(required=True)
+    donations_delta = ndb.IntegerProperty(required=True)
+    clan = ndb.StringProperty()
     
+
+"""
+Todo: get, post, patch, put, delete
+"""

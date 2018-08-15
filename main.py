@@ -2,6 +2,7 @@ from google.appengine.ext import ndb
 from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 import routes.user
+from routes.clan import ClanHandler
 import webapp2
 import json
 import urllib
@@ -69,7 +70,9 @@ class OAuthHandler(webapp2.RequestHandler):
             headers=access_header
         )
         accessed_properties = json.loads(user_result.content)
-        print accessed_properties
+        accessed_properties['image']['url'] = accessed_properties['image']['url'].replace(
+            "sz=50", "sz=240")
+        #print accessed_properties
         email = accessed_properties['emails'][0]['value']
         # check if user has account / api key already
         api_key = routes.user.retrieve_api_key(email)
@@ -92,6 +95,8 @@ webapp2.WSGIApplication.allowed_methods = new_allowed_methods
 # [START app]
 app = webapp2.WSGIApplication([
     ('/', HomePageHandler),
-    ('/oauth', OAuthHandler)
+    ('/oauth', OAuthHandler),
+    ('/clans', ClanHandler),
+    ('/clans/(.*)', ClanHandler)
 ], debug=True)
 # [END app]
