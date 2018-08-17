@@ -3,6 +3,7 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import urlfetch
 import routes.user
 from routes.clan import ClanHandler
+from routes.player import PlayerHandler
 import webapp2
 import json
 import urllib
@@ -12,7 +13,6 @@ import os
 
 with open("secret/client_secrets.json") as data_file:
     data = json.load(data_file)
-print data
 CLIENT_ID = data["web"]["client_id"]
 CLIENT_SECRET = data["web"]["client_secret"]
 REDIRECT_URI = "http://localhost:8080/oauth"
@@ -97,6 +97,8 @@ app = webapp2.WSGIApplication([
     ('/', HomePageHandler),
     ('/oauth', OAuthHandler),
     ('/clans', ClanHandler),
-    ('/clans/(.*)', ClanHandler)
+    ('/clans/(.*)', ClanHandler),
+    ('/players', PlayerHandler),
+    ('/players/(.*)', PlayerHandler)
 ], debug=True)
 # [END app]

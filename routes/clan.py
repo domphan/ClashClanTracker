@@ -2,21 +2,28 @@ import json
 import webapp2
 from google.appengine.ext import ndb
 from google.appengine.api import urlfetch
-from routes.player import Player
-from routes.user import User
+import routes.player
+import routes.user
 
 ROYALE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTQyMywiaWRlbiI6IjM5Njg5NDk4OTY5Njc2MTg3MSIsIm1kIjp7fSwidHMiOjE1MzM2NjAzNzY2NDN9.5Vur0CS8gOqiU7-OgL3KZocWFKsLFgOtPUt_Du-bIDE"
+REALLY_LARGE_NUMBER = 500000
 
 def authenticate_user(header_obj):
-    print header_obj
     if 'auth' in header_obj:
-        for user in User.query(User.api_key == header_obj['auth']):
+        for user in routes.user.User.query(routes.user.User.api_key == header_obj['auth']):
             return True
     return False
 
+
 def get_authenticated_clan(api_key):
-    for user in User.query(User.api_key == api_key):
+    for user in routes.user.User.query(routes.user.User.api_key == api_key):
         return user.clan_id
+    return ''
+
+
+def get_authenticated_clan_tag(api_key):
+    for user in routes.user.User.query(routes.user.User.api_key == api_key):
+        return user.clan_tag
     return ''
 
 def royale_api_get(url):
@@ -27,26 +34,47 @@ def royale_api_get(url):
     )
     return selected_item.content
 
+
 def clan_owned_already(clan_tag):
-    for user in User.query(User.clan_tag == clan_tag):
+    for user in routes.user.User.query(routes.user.User.clan_tag == clan_tag):
         return True
     return False
 
+
 def get_owner_id(api_key):
-    for user in User.query(User.api_key == api_key):
+    for user in routes.user.User.query(routes.user.User.api_key == api_key):
         return user.id
     return ""
 
+
 def clear_clan_player(clan_tag):
-    for player in Player.query(Player.clan == clan_tag):
+    for player in routes.player.Player.query(routes.player.Player.clan == clan_tag):
         player.clan = None
         player.put()
 
+
 def clear_clan_user(api_key):
-    for user in User.query(User.api_key == api_key):
+    for user in routes.user.User.query(routes.user.User.api_key == api_key):
         user.clan_id = None
         user.clan_tag = None
         user.put()
+
+def get_weakest_link(members):
+    minimum_delta = REALLY_LARGE_NUMBER
+    minimum_player = None
+    for member in members:
+        if member.donations_delta < minimum_delta:
+            minimum_delta = member.donations_delta
+            minimum_player = member
+    return minimum_player.name
+
+def get_inactive_players(members):
+    inactive_string = ""
+    for member in members:
+        if member.donations == 0:
+            inactive_string = inactive_string + str(member.name) + ", "
+    return inactive_string
+
 
 class Clan(ndb.Model):
     id = ndb.StringProperty()
@@ -54,8 +82,10 @@ class Clan(ndb.Model):
     name = ndb.StringProperty(required=True)
     clan_tag = ndb.StringProperty(required=True)
     member_amount = ndb.IntegerProperty(required=True)
-    members = ndb.StructuredProperty(Player, repeated=True)
+    members = ndb.StructuredProperty(routes.player.Player, repeated=True)
     donations_per_week = ndb.IntegerProperty(required=True)
+    inactive_members = ndb.StringProperty()
+    weakest_link = ndb.StringProperty()
     
 class ClanHandler(webapp2.RequestHandler):
     
@@ -115,14 +145,14 @@ class ClanHandler(webapp2.RequestHandler):
                 new_clan.id = str(new_clan.key.urlsafe())
                 new_clan.put()
                 # add clan to user
-                for user in User.query(User.api_key == api_key):
+                for user in routes.user.User.query(routes.user.User.api_key == api_key):
                     user.clan_id = new_clan.id
                     user.clan_tag = clan_data['tag'].upper()
                     user.put()
                 # for each member
                 for member in clan_data['members']:
                     # create new entity
-                    new_member = Player(
+                    new_member = routes.player.Player(
                         tag=member['tag'],
                         name=member['name'],
                         trophies=member['trophies'],
@@ -131,6 +161,8 @@ class ClanHandler(webapp2.RequestHandler):
                         clan=clan_data['tag'].upper()
                     )
                     new_clan.members.append(new_member)
+                    new_clan.weakest_link = get_weakest_link(new_clan.members)
+                    new_clan.inactive_members = get_inactive_players(new_clan.members)
                     new_member.put()
                     new_member.id = str(new_member.key.urlsafe())
                     new_member.put()
@@ -138,7 +170,7 @@ class ClanHandler(webapp2.RequestHandler):
                 new_clan.put()
                 # response JSON
                 new_clan_dict = new_clan.to_dict()
-                new_clan_dict['self'] = "/clans/" + new_clan.key.urlsafe()
+                new_clan_dict['self'] = "/clans/" + new_clan.id
                 self.response.write(json.dumps(new_clan_dict))
             else:
                 self.response.status = 400
@@ -150,74 +182,85 @@ class ClanHandler(webapp2.RequestHandler):
 
 
     def put(self, clan_id=None):
-        if authenticate_user(self.request.headers):
-            api_key = self.request.headers['auth']
-            body = json.loads(self.request.body)
-            if 'tag' in body and not clan_owned_already(body['tag']):
-                if clan_id:
-                    selected_clan = ndb.Key(urlsafe=clan_id).get()
-                    if selected_clan:
-                        clan_json = royale_api_get(
-                            "https://api.royaleapi.com/clan/" + body['tag'])
-                        clan_data = json.loads(clan_json)
-                        selected_clan.owner_id = get_owner_id(api_key)
-                        selected_clan.name = clan_data['name']
-                        selected_clan.clan_tag = clan_data['tag'].upper()
-                        selected_clan.member_amount = clan_data['memberCount']
-                        selected_clan.donations_per_week = clan_data['donations']
-                        selected_clan.members = []
-                        for member in clan_data['members']:
-                            new_member = Player(
-                                tag=member['tag'],
-                                name=member['name'],
-                                trophies=member['trophies'],
-                                donations=member['donations'],
-                                donations_delta=member['donationsDelta'],
-                                clan=clan_data['tag'].upper()
-                            )
-                            selected_clan.members.append(new_member)
-                            new_member.put()
-                            new_member.id = str(new_member.key.urlsafe())
-                            new_member.put()
-                        selected_clan.put()
-                        clan_dict = selected_clan.to_dict()
-                        clan_dict['self'] = "/clans/" + selected_clan.key.urlsafe()
-                        self.response.write(json.dumps(clan_dict))
-                    else:
-                        self.response.status = 400
-                        self.response.write("ERROR CLAN DOESN'T EXIST")
-                else:
-                    self.response.status = 400
-                    self.response.write("ERROR NO CLAN_ID IN URL")
-            else:
+        if not authenticate_user(self.request.headers):
+            self.response.status = 403
+            self.response.write("ERROR: cannot authenticate")
+            return
+        api_key = self.request.headers['auth']
+        body = json.loads(self.request.body)
+        if 'tag' not in body:
+            self.response.status = 400
+            self.response.write("ERROR: NO CLAN TAG IN BODY OR CLAN ALREADY OWNED")
+            return
+        if clan_owned_already(body['tag']):
+            owner_tag = get_authenticated_clan_tag(api_key)
+            print "======================"
+            print owner_tag
+            print body['tag']
+            if owner_tag != body['tag']:
                 self.response.status = 400
-                self.response.write("ERROR: NO CLAN TAG IN BODY OR CLAN ALREADY OWNED")
+                self.response.write("ERROR: CLAN ALREADY OWNED")
+                return
+        if not clan_id:
+            self.response.status = 400
+            self.response.write("ERROR NO CLAN_ID IN URL")
+        selected_clan = ndb.Key(urlsafe=clan_id).get()
+        if selected_clan:
+            clan_json = royale_api_get(
+                "https://api.royaleapi.com/clan/" + body['tag'])
+            clan_data = json.loads(clan_json)
+            selected_clan.owner_id = get_owner_id(api_key)
+            selected_clan.name = clan_data['name']
+            selected_clan.clan_tag = clan_data['tag'].upper()
+            selected_clan.member_amount = clan_data['memberCount']
+            selected_clan.donations_per_week = clan_data['donations']
+            selected_clan.members = []
+            for member in clan_data['members']:
+                new_member = routes.player.Player(
+                    tag=member['tag'],
+                    name=member['name'],
+                    trophies=member['trophies'],
+                    donations=member['donations'],
+                    donations_delta=member['donationsDelta'],
+                    clan=clan_data['tag'].upper()
+                )
+                selected_clan.members.append(new_member)
+                new_member.put()
+                new_member.id = str(new_member.key.urlsafe())
+                new_member.put()
+            selected_clan.inactive_members = get_inactive_players(selected_clan.members)
+            selected_clan.weakest_link = get_weakest_link(selected_clan.members)
+            selected_clan.put()
+            clan_dict = selected_clan.to_dict()
+            clan_dict['self'] = "/clans/" + selected_clan.key.urlsafe()
+            self.response.write(json.dumps(clan_dict))
         else:
             self.response.status = 400
-            self.response.write("ERROR: CANNOT AUTHENTICATE")
+            self.response.write("ERROR CLAN DOESN'T EXIST")
+
 
     # needs to handle removing clans from players
     def delete(self, clan_id=None):
         if authenticate_user(self.request.headers):
             api_key = self.request.headers['auth']
+            if clan_id:
+                selected_clan = ndb.Key(urlsafe=clan_id).get()
+                if selected_clan:
+                    # release clan from individual players
+                    clear_clan_player(selected_clan.clan_tag)
+                    # remove clan from user
+                    clear_clan_user(api_key)
+                    selected_clan.key.delete()
+                    self.response.write(
+                        "Deleted clan :" + str(clan_id) + " cleared players' clan" \
+                        + " and removed clan from user account"
+                        )
+                else:
+                    self.response.status = 400
+                    self.response.write("Error: invalid clan id")
+            else:
+                self.response.status = 400
+                self.response.write("Error: missing clan id")
         else:
             self.response.status = 400
             self.response.write("ERROR: CANNOT AUTHENTICATE")
-        if clan_id:
-            selected_clan = ndb.Key(urlsafe=clan_id).get()
-            if selected_clan:
-                # release clan from individual players
-                clear_clan_player(selected_clan.clan_tag)
-                # remove clan from user
-                clear_clan_user(api_key)
-                selected_clan.key.delete()
-                self.response.write(
-                    "Deleted clan :" + str(clan_id) + " cleared players' clan" \
-                    + " and removed clan from user account"
-                    )
-            else:
-                self.response.status = 400
-                self.response.write("Error: invalid clan id")
-        else:
-            self.response.status = 400
-            self.response.write("Error: no clan id inputted")
