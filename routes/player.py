@@ -13,12 +13,16 @@ def player_exists(player_tag):
 
 
 def royale_api_get(url):
-    access_header = {'auth': ROYALE}
-    selected_item = urlfetch.fetch(
-        url=url,
-        headers=access_header
-    )
-    return selected_item.content
+    try:
+        access_header = {'auth': ROYALE}
+        selected_item = urlfetch.fetch(
+            url=url,
+            headers=access_header
+        )
+        return selected_item.content
+    except urlfetch.DeadlineExceededError:
+        return ''
+
 
 
 def authenticate_user(header_obj):
@@ -34,7 +38,7 @@ def get_clan_from_tag(tag):
     return ''
 
 PLAYER_LINK = "https://api.royaleapi.com/player/"
-ROYALE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTQyMywiaWRlbiI6IjM5Njg5NDk4OTY5Njc2MTg3MSIsIm1kIjp7fSwidHMiOjE1MzM2NjAzNzY2NDN9.5Vur0CS8gOqiU7-OgL3KZocWFKsLFgOtPUt_Du-bIDE"
+ROYALE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTQyMywiaWRlbiI6IjM5Njg5NDk4OTY5Njc2MTg3MSIsIm1kIjp7InVzZXJuYW1lIjoidWJlciIsImtleVZlcnNpb24iOjMsImRpc2NyaW1pbmF0b3IiOiIyOTI5In0sInRzIjoxNTM4Mjc0MjQxOTUyfQ.Omtc0zqvPJdrTnPyLgg7Dk_jwq0Rf1UDkrJ6y8QZzAE"
 
 
 
@@ -49,8 +53,15 @@ class Player(ndb.Model):
     
 
 class PlayerHandler(webapp2.RequestHandler):
-
+    def options(self, player_id=None):
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = 'auth, Authorization'
+        self.response.headers['Access-Control-Allow-Methods'] = '*'
+        
     def get(self, player_id=None):
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = 'auth, Authorization'
+        self.response.headers['Access-Control-Allow-Methods'] = '*'
         if not player_id:
             # show all players
             player_list = [all_players.to_dict()
@@ -58,43 +69,38 @@ class PlayerHandler(webapp2.RequestHandler):
             for player in player_list:
                 player['self'] = "/players/" + str(player['id'])
             self.response.write(json.dumps(player_list))
-            return
         if len(player_id) < 12:
             selected_player = royale_api_get(
                 PLAYER_LINK + player_id)
+            if not selected_player:
+                self.response.status = 400
+                self.response.write("ERROR: CANNOT ACCESS API")
             self.response.write(selected_player)
-            return
         else:
-            if authenticate_user(self.request.headers):
-                api_key = self.request.headers['auth']
-                selected_player = ndb.Key(urlsafe=player_id).get()
-                if selected_player:
-                    player_dict = selected_player.to_dict()
-                    player_dict['self'] = "/players/" + selected_player.id
-                    self.response.write(json.dumps(player_dict))
-                else:
-                    self.response.status = 404
-                    self.response.write("ERROR: player does not exist")
-            else:
+            if not authenticate_user(self.request.headers):
                 self.response.status = 403
                 self.response.write("ERROR: Cannot authenticate")
+            api_key = self.request.headers['auth']
+            selected_player = ndb.Key(urlsafe=player_id).get()
+            if not selected_player:
+                self.response.status = 404
+                self.response.write("ERROR: player does not exist")
+            player_dict = selected_player.to_dict()
+            player_dict['self'] = "/players/" + selected_player.id
+            self.response.write(json.dumps(player_dict))
 
 
     def post(self):
-        if authenticate_user(self.request.headers):
-            body = json.loads(self.request.body)
-        else:
+        if not authenticate_user(self.request.headers):
             self.response.status = 403
             self.response.write("ERROR: cannot be authenticated")
-            return
+        body = json.loads(self.request.body)
         if 'tag' not in body:
             self.response.status = 400
             self.response.write("ERROR: no player tag provided")
-            return
         if player_exists(body['tag']):
             self.response.status = 400
             self.response.write("ERROR: player already exists")
-            return
         #auto populate add player info
         player_json = royale_api_get(PLAYER_LINK + body['tag'])
         player_data = json.loads(player_json)
@@ -112,7 +118,6 @@ class PlayerHandler(webapp2.RequestHandler):
         new_player_dict = new_player.to_dict()
         new_player_dict['self'] = "/players/" + new_player.id
         self.response.write(json.dumps(new_player_dict))
-        return
 
 
 
@@ -122,25 +127,20 @@ class PlayerHandler(webapp2.RequestHandler):
         else:
             self.response.status = 400
             self.response.write("ERROR: cannot be authenticated")
-            return
         if 'tag' not in body:
             self.response.status = 400
             self.response.write("ERROR: missing tag in body")
-            return
         if player_exists(body['tag']):
             self.response.status = 400
             self.response.write("ERROR: player exists already")
-            return
         #get player
         if not player_id:
             self.response.status = 400
             self.response.write("ERROR: no player_id given")
-            return
         selected_player = ndb.Key(urlsafe=player_id).get()
         if not selected_player:
             self.response.status = 400
             self.response.write("ERROR: player_id does not exist")
-            return
         player_json = royale_api_get(PLAYER_LINK + body['tag'])
         player_data = json.loads(player_json)
         selected_player.tag = player_data['tag']
@@ -158,16 +158,13 @@ class PlayerHandler(webapp2.RequestHandler):
         if not authenticate_user(self.request.headers):
             self.response.status = 403
             self.response.write("ERROR: cannot authenticate")
-            return
         if not player_id:
             self.response.status = 400
             self.response.write("ERROR: missing player_id")
-            return
         selected_player = ndb.Key(urlsafe=player_id).get()
         if not selected_player:
             self.response.status = 400
             self.response.write("ERROR: player_id does not exist")
-            return
         if selected_player.clan:
             clan_id = get_clan_from_tag(selected_player.clan)
             if clan_id:

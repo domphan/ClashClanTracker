@@ -15,7 +15,7 @@ class User(ndb.Model):
     clan_id = ndb.StringProperty()
     clan_tag = ndb.StringProperty()
     api_key = ndb.StringProperty(required=True)
-
+    
 def create_user(email):
     new_user = User(
         email=email,
