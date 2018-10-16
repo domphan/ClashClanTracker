@@ -26,7 +26,6 @@ def royale_api_get(url):
 
 
 def authenticate_user(header_obj):
-    print header_obj
     if 'auth' in header_obj:
         for user in routes.user.User.query(routes.user.User.api_key == header_obj['auth']):
             return True
@@ -57,15 +56,15 @@ class PlayerHandler(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'auth, Authorization'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
-        
+    
+    # Should return all favorited players, or just a single player from royaleAPI
     def get(self, player_id=None):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'auth, Authorization'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
         if not player_id:
             # show all players
-            player_list = [all_players.to_dict()
-                           for all_players in Player.query()]
+            player_list = [all_players.to_dict() for all_players in Player.query()]
             for player in player_list:
                 player['self'] = "/players/" + str(player['id'])
             self.response.write(json.dumps(player_list))
@@ -74,7 +73,7 @@ class PlayerHandler(webapp2.RequestHandler):
                 PLAYER_LINK + player_id)
             if not selected_player:
                 self.response.status = 400
-                self.response.write("ERROR: CANNOT ACCESS API")
+                self.response.write("ERROR: CANNOT ACCESS ROYALEAPI")
             self.response.write(selected_player)
         else:
             if not authenticate_user(self.request.headers):
@@ -89,7 +88,7 @@ class PlayerHandler(webapp2.RequestHandler):
             player_dict['self'] = "/players/" + selected_player.id
             self.response.write(json.dumps(player_dict))
 
-
+    # Add a favorite player to user as well
     def post(self):
         if not authenticate_user(self.request.headers):
             self.response.status = 403
@@ -120,7 +119,7 @@ class PlayerHandler(webapp2.RequestHandler):
         self.response.write(json.dumps(new_player_dict))
 
 
-
+    # Used to refresh the player's individual stats
     def put(self, player_id=None):
         if authenticate_user(self.request.headers):
             body = json.loads(self.request.body)
@@ -153,6 +152,7 @@ class PlayerHandler(webapp2.RequestHandler):
         player_dict = selected_player.to_dict()
         self.response.write(json.dumps(player_dict))
 
+    # remove selected player
     def delete(self, player_id=None):
         #needs to handle removing player from clan entity
         if not authenticate_user(self.request.headers):
