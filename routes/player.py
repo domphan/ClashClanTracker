@@ -11,6 +11,10 @@ def player_exists(player_tag):
         return True
     return False
 
+def get_user(api_key):
+    for user in routes.user.User.query(routes.user.User.api_key == api_key):
+        return user.id
+    return False
 
 def royale_api_get(url):
     try:
@@ -57,7 +61,7 @@ class PlayerHandler(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Headers'] = 'auth, Authorization'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
     
-    # Should return all favorited players, or just a single player from royaleAPI
+    # Should return all favorited players of user, or just a single player from royaleAPI
     def get(self, player_id=None):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = 'auth, Authorization'
@@ -68,6 +72,7 @@ class PlayerHandler(webapp2.RequestHandler):
             for player in player_list:
                 player['self'] = "/players/" + str(player['id'])
             self.response.write(json.dumps(player_list))
+        # Get player data from 3rd party API
         if len(player_id) < 12:
             selected_player = royale_api_get(
                 PLAYER_LINK + player_id)
@@ -75,6 +80,7 @@ class PlayerHandler(webapp2.RequestHandler):
                 self.response.status = 400
                 self.response.write("ERROR: CANNOT ACCESS ROYALEAPI")
             self.response.write(selected_player)
+        # Get individual player from DB
         else:
             if not authenticate_user(self.request.headers):
                 self.response.status = 403
