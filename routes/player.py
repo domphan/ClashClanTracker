@@ -41,9 +41,10 @@ def get_clan_from_tag(tag):
     return ''
 
 PLAYER_LINK = "https://api.royaleapi.com/player/"
-ROYALE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTQyMywiaWRlbiI6IjM5Njg5NDk4OTY5Njc2MTg3MSIsIm1kIjp7InVzZXJuYW1lIjoidWJlciIsImtleVZlcnNpb24iOjMsImRpc2NyaW1pbmF0b3IiOiIyOTI5In0sInRzIjoxNTM4Mjc0MjQxOTUyfQ.Omtc0zqvPJdrTnPyLgg7Dk_jwq0Rf1UDkrJ6y8QZzAE"
+with open("./secret/client_secrets.json") as data_file:
+    data = json.load(data_file)
 
-
+ROYALE = data["royale_api_key"]
 
 class Player(ndb.Model):
     id = ndb.StringProperty()
@@ -127,25 +128,30 @@ class PlayerHandler(webapp2.RequestHandler):
 
     # Used to refresh the player's individual stats
     def put(self, player_id=None):
+        # authenticate
         if authenticate_user(self.request.headers):
             body = json.loads(self.request.body)
         else:
             self.response.status = 400
             self.response.write("ERROR: cannot be authenticated")
+        # check for player tag
         if 'tag' not in body:
             self.response.status = 400
             self.response.write("ERROR: missing tag in body")
+        # check given tag exists in DB already
         if player_exists(body['tag']):
             self.response.status = 400
             self.response.write("ERROR: player exists already")
-        #get player
+        # handle case with no player id
         if not player_id:
             self.response.status = 400
             self.response.write("ERROR: no player_id given")
         selected_player = ndb.Key(urlsafe=player_id).get()
+        # if player doesn't exist in DB
         if not selected_player:
             self.response.status = 400
             self.response.write("ERROR: player_id does not exist")
+        # load data and create dictionary from it
         player_json = royale_api_get(PLAYER_LINK + body['tag'])
         player_data = json.loads(player_json)
         selected_player.tag = player_data['tag']
@@ -164,13 +170,17 @@ class PlayerHandler(webapp2.RequestHandler):
         if not authenticate_user(self.request.headers):
             self.response.status = 403
             self.response.write("ERROR: cannot authenticate")
+        # if no player_id in uri
         if not player_id:
             self.response.status = 400
             self.response.write("ERROR: missing player_id")
+        # get player frmo DB
         selected_player = ndb.Key(urlsafe=player_id).get()
+        # if player doesn't exist in DB
         if not selected_player:
             self.response.status = 400
             self.response.write("ERROR: player_id does not exist")
+        # if player is in a clan, remove them
         if selected_player.clan:
             clan_id = get_clan_from_tag(selected_player.clan)
             if clan_id:
@@ -181,6 +191,7 @@ class PlayerHandler(webapp2.RequestHandler):
                         delete_index = idx
                 del selected_clan.members[delete_index]
                 selected_clan.put()
+        # delete the player
         selected_player.key.delete()
         self.response.write("Deleted player: " + str(player_id))
         

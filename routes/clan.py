@@ -7,7 +7,10 @@ import routes.user
 
 urlfetch.set_default_fetch_deadline(45)
 
-ROYALE = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTQyMywiaWRlbiI6IjM5Njg5NDk4OTY5Njc2MTg3MSIsIm1kIjp7InVzZXJuYW1lIjoidWJlciIsImtleVZlcnNpb24iOjMsImRpc2NyaW1pbmF0b3IiOiIyOTI5In0sInRzIjoxNTM4Mjc0MjQxOTUyfQ.Omtc0zqvPJdrTnPyLgg7Dk_jwq0Rf1UDkrJ6y8QZzAE"
+with open("./secret/client_secrets.json") as data_file:
+    data = json.load(data_file)
+
+ROYALE = data["royale_api_key"]
 REALLY_LARGE_NUMBER = 500000
 
 
@@ -190,23 +193,29 @@ class ClanHandler(webapp2.RequestHandler):
         self.response.headers['Access-Control-Allow-Origin'] = "*"
         self.response.headers['Access-Control-Allow-Headers'] = '*'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
+        # authenticate user
         if not authenticate_user(self.request.headers):
             self.response.status = 403
             self.response.write("ERROR: cannot authenticate")
         api_key = self.request.headers['auth']
         body = json.loads(self.request.body)
+        # check if user sent in tag 
         if 'tag' not in body:
             self.response.status = 400
             self.response.write(
                 "ERROR: NO CLAN TAG IN BODY")
+        # check if clan is owned already
         if clan_owned_already(body['tag']):
             owner_tag = get_authenticated_clan_tag(api_key)
+            # if it exists, check if the owner is being sent in
             if owner_tag != body['tag']:
                 self.response.status = 400
                 self.response.write("ERROR: CLAN ALREADY OWNED")
+        # check if clan id in URI
         if not clan_id:
             self.response.status = 400
             self.response.write("ERROR NO CLAN_ID IN URL")
+        # look in db for key
         selected_clan = ndb.Key(urlsafe=clan_id).get()
         if selected_clan:
             clan_json = royale_api_get(
