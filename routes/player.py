@@ -16,6 +16,7 @@ def get_user(api_key):
         return user.id
     return False
 
+# used to fetch data from 3rd party API
 def royale_api_get(url):
     try:
         access_header = {'auth': ROYALE}
@@ -28,7 +29,7 @@ def royale_api_get(url):
         return ''
 
 
-
+# Queries database to check if user exists
 def authenticate_user(header_obj):
     if 'auth' in header_obj:
         for user in routes.user.User.query(routes.user.User.api_key == header_obj['auth']):
@@ -164,7 +165,7 @@ class PlayerHandler(webapp2.RequestHandler):
         player_dict = selected_player.to_dict()
         self.response.write(json.dumps(player_dict))
 
-    # remove selected player
+    # remove selected player from DB
     def delete(self, player_id=None):
         #needs to handle removing player from clan entity
         if not authenticate_user(self.request.headers):
