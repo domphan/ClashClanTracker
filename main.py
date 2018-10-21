@@ -4,6 +4,7 @@ from google.appengine.api import urlfetch
 import routes.user
 from routes.clan import ClanHandler
 from routes.player import PlayerHandler
+from routes.user import UserHandler
 import webapp2
 import json
 import urllib
@@ -99,6 +100,8 @@ app = webapp2.WSGIApplication([
     ('/clans', ClanHandler),
     ('/clans/(.*)', ClanHandler),
     ('/players', PlayerHandler),
-    ('/players/(.*)', PlayerHandler)
+    ('/players/(.*)', PlayerHandler),
+    ('/favorites', UserHandler),
+    ('/favorites/(.*)', UserHandler)
 ], debug=True)
 # [END app]

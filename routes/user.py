@@ -19,7 +19,8 @@ def generate_api_key():
 def create_user(email):
     new_user = User(
         email=email,
-        api_key=generate_api_key()
+        api_key=generate_api_key(),
+        favorites=[]
     )
     new_user.put()
     new_user.id = str(new_user.key.urlsafe())
@@ -48,24 +49,28 @@ class UserHandler(webapp2.RequestHandler):
     # get should return all of player's favorite
     def get(self):
         # check for auth header
-        if not self.request.headers.auth:
+        if 'auth' not in self.request.headers:
             self.response.status = 403
             self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
         # authenticate user
         user = authenticate_user(self.request.headers)
+        user_dict = user.to_dict()
         if not user:
             self.response.status = 403
             self.response.write("ERROR: INVALID AUTHENTICATION")
         if not user:
             self.response.status = 404
             self.response.write("ERROR: User does not exist")
-        self.response.wrte(json.dumps(user.favorites))
+        if len(user_dict['favorites']) > 0:
+            self.response.write(json.dumps(user_dict['favorites']))
+        else:
+            self.response.write([])
 
         
-    # patch to add players to the user's favorites
-    def patch(self):
+    # post to add players to the user's favorites
+    def post(self):
         # check for auth header
-        if not self.request.headers.auth:
+        if 'auth' not in self.request.headers:
             self.response.status = 403
             self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
         # authenticate user
@@ -84,12 +89,13 @@ class UserHandler(webapp2.RequestHandler):
         # add player to list
         user.favorites.append(body['player_tag'])
         user.put()
-        self.response.write(json.dumps(user.favorites))
+        user_dict = user.to_dict()
+        self.response.write(json.dumps(user_dict['favorites']))
 
     # delete to remove players or a single player from user's favorites
     def delete(self, player_tag=None):
         # check for auth header
-        if not self.request.headers.auth:
+        if 'auth' not in self.request.headers:
             self.response.status = 403
             self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
         # authenticate user
@@ -100,4 +106,12 @@ class UserHandler(webapp2.RequestHandler):
         if not user:
             self.response.status = 404
             self.response.write("ERROR: User does not exist")
-
+        # delete all
+        if player_tag is None:
+            user['favorites'] = []
+            user.put()
+            self.response.write("User's favorite players deleted")
+        # delete single
+        if player_tag:
+            user['favorites'].remove(player_tag)
+            self.response.write("Player {player_tag} has been removed from favorites")
