@@ -113,5 +113,10 @@ class UserHandler(webapp2.RequestHandler):
             self.response.write("User's favorite players deleted")
         # delete single
         if player_tag:
-            user['favorites'].remove(player_tag)
-            self.response.write("Player {player_tag} has been removed from favorites")
+            for idx, player in enumerate(user.favorites):
+                if player_tag == player:
+                    delete_index = idx
+                    break
+            del user.favorites[delete_index]
+            user.put()
+            self.response.write(("Player {} has been removed from favorites").format(player_tag))
