@@ -17,17 +17,21 @@ class UserHandler(webapp2.RequestHandler):
         if 'auth' not in self.request.headers:
             self.response.status = 403
             self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
+            return
         # authenticate user
         user = authenticate_user(self.request.headers)
         user_dict = user.to_dict()
         if not user:
             self.response.status = 403
             self.response.write("ERROR: INVALID AUTHENTICATION")
+            return
         if not user:
             self.response.status = 404
             self.response.write("ERROR: User does not exist")
-        if len(user_dict['favorites']) > 0:
+            return
+        if user_dict.get('favorites'):
             self.response.write(json.dumps(user_dict['favorites']))
+            return
         else:
             self.response.write([])
 
@@ -38,19 +42,23 @@ class UserHandler(webapp2.RequestHandler):
         if 'auth' not in self.request.headers:
             self.response.status = 403
             self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
+            return
         # authenticate user
         user = authenticate_user(self.request.headers)
         if not user:
             self.response.status = 403
             self.response.write("ERROR: INVALID AUTHENTICATION")
+            return
         if not user:
             self.response.status = 404
             self.response.write("ERROR: User does not exist")
+            return
         # check for player tag in body
         body = json.loads(self.request.body)
         if 'player_tag' not in body:
             self.response.status = 400
             self.response.write("ERROR: NO PLAYER TAG IN BODY TO ADD")
+            return
         # add player to list
         user.favorites.append(body['player_tag'])
         user.put()
@@ -66,19 +74,23 @@ class UserHandler(webapp2.RequestHandler):
         if 'auth' not in self.request.headers:
             self.response.status = 403
             self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
+            return
         # authenticate user
         user = authenticate_user(self.request.headers)
         if not user:
             self.response.status = 403
             self.response.write("ERROR: INVALID AUTHENTICATION")
+            return
         if not user:
             self.response.status = 404
             self.response.write("ERROR: User does not exist")
+            return
         # delete all
         if player_tag is None:
             user['favorites'] = []
             user.put()
             self.response.write("User's favorite players deleted")
+            return
         # delete single
         if player_tag:
             for idx, player in enumerate(user.favorites):

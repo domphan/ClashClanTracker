@@ -5,6 +5,6 @@ class Player(ndb.Model):
     tag = ndb.StringProperty(required=True)
     name = ndb.StringProperty(required=True)
     trophies = ndb.IntegerProperty(required=True)
-    donations = ndb.IntegerProperty(required=True)
-    donations_delta = ndb.IntegerProperty(required=True)
+    donations = ndb.IntegerProperty()
+    donations_delta = ndb.IntegerProperty()
     clan = ndb.StringProperty()

@@ -1,5 +1,4 @@
-import json
-import webapp2
+import os
 from binascii import hexlify
 from google.appengine.ext import ndb
 from google.appengine.api import urlfetch

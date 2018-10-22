@@ -7,6 +7,8 @@ from models.clan import Clan
 from models.player import Player
 from helpers.clan_helpers import *
 
+urlfetch.set_default_fetch_deadline(45)
+
 
 class ClanHandler(webapp2.RequestHandler):
     def options(self, clan_id=None):
@@ -23,11 +25,13 @@ class ClanHandler(webapp2.RequestHandler):
             selected_clan = royale_api_get(
                 "https://api.royaleapi.com/clan/" + tag)
             self.response.write(selected_clan)
+            return
         # check for auth
         else:
             if not authenticate_user(self.request.headers):
                 self.response.status = 403
                 self.response.write("ERROR 403: Auth error")
+                return
             api_key = self.request.headers['auth']
             # get clan id
             owner_clan_id = get_authenticated_clan(api_key)
@@ -35,12 +39,14 @@ class ClanHandler(webapp2.RequestHandler):
                 # return empty object if clan not created yet
                 clan_dict = {}
                 self.response.write(json.dumps(clan_dict))
+                return
             # if it exists, get db object
             selected_clan = ndb.Key(urlsafe=owner_clan_id).get()
             if not selected_clan:
                 # does not exist
                 self.response.status = 404
                 self.response.write("ERORR: clan does not exist")
+                return
             # return to user
             clan_dict = selected_clan.to_dict()
             clan_dict['self'] = "/clans/" + owner_clan_id
@@ -52,16 +58,18 @@ class ClanHandler(webapp2.RequestHandler):
         if not authenticate_user(self.request.headers):
             self.response.status = 403
             self.response.write("ERROR: CANNOT BE AUTHENTICATED")
+            return
         api_key = self.request.headers['auth']
         # allow user to post a clan, need to populate everything else
         body = json.loads(self.request.body)
         if 'tag' not in body: 
             self.response.status = 400
-            self.response.write(
-                "ERROR 400: MISSING CLAN TAG")
+            self.response.write("ERROR 400: MISSING CLAN TAG")
+            return
         if clan_owned_already(body['tag']):
             self.response.status = 400
             self.response.write("ERROR: CLAN OWNED ALREADY")
+            return
         # populate clan data
         clan_json = royale_api_get(
             "https://api.royaleapi.com/clan/" + body['tag'])
@@ -114,13 +122,14 @@ class ClanHandler(webapp2.RequestHandler):
         if not authenticate_user(self.request.headers):
             self.response.status = 403
             self.response.write("ERROR: cannot authenticate")
+            return
         api_key = self.request.headers['auth']
         body = json.loads(self.request.body)
         # check if user sent in tag 
         if 'tag' not in body:
             self.response.status = 400
-            self.response.write(
-                "ERROR: NO CLAN TAG IN BODY")
+            self.response.write("ERROR: NO CLAN TAG IN BODY")
+            return
         # check if clan is owned already
         if clan_owned_already(body['tag']):
             owner_tag = get_authenticated_clan_tag(api_key)
@@ -128,10 +137,12 @@ class ClanHandler(webapp2.RequestHandler):
             if owner_tag != body['tag']:
                 self.response.status = 400
                 self.response.write("ERROR: CLAN ALREADY OWNED")
+                return
         # check if clan id in URI
         if not clan_id:
             self.response.status = 400
             self.response.write("ERROR NO CLAN_ID IN URL")
+            return
         # look in db for key
         selected_clan = ndb.Key(urlsafe=clan_id).get()
         if selected_clan:
@@ -160,23 +171,28 @@ class ClanHandler(webapp2.RequestHandler):
             clan_dict = selected_clan.to_dict()
             clan_dict['self'] = "/clans/" + selected_clan.key.urlsafe()
             self.response.write(json.dumps(clan_dict))
+            return
         else:
             self.response.status = 400
             self.response.write("ERROR CLAN DOESN'T EXIST")
+            return
 
     # needs to handle removing clans from players
     def delete(self, clan_id=None):
         if not authenticate_user(self.request.headers):
             self.response.status = 401
             self.response.write("ERROR: CANNOT AUTHENTICATE")
+            return
         api_key = self.request.headers['auth']
         if not clan_id:
             self.response.status = 400
-            self.response.write("Error: missing clan id")    
+            self.response.write("Error: missing clan id")
+            return
         selected_clan = ndb.Key(urlsafe=clan_id).get()
         if not selected_clan:
             self.response.status = 400
             self.response.write("Error: invalid clan id")
+            return
         # remove clan from user
         clear_clan_user(api_key)
         selected_clan.key.delete()

@@ -1,7 +1,7 @@
 import json
-import webapp2
 from google.appengine.ext import ndb
 from google.appengine.api import urlfetch
+import webapp2
 from models.user import User
 from models.player import Player
 from models.clan import Clan
