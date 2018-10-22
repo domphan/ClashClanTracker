@@ -1,44 +1,9 @@
 from google.appengine.ext import ndb
-from binascii import hexlify
 import json
 import webapp2
 import os
-
-
-def authenticate_user(header_obj):
-    if 'auth' in header_obj:
-        for user in User.query(User.api_key == header_obj['auth']):
-            return user
-    return False
-
-def generate_api_key():
-    api_length = 16
-    key = hexlify(os.urandom(api_length))
-    return key.decode()
-    
-def create_user(email):
-    new_user = User(
-        email=email,
-        api_key=generate_api_key(),
-        favorites=[]
-    )
-    new_user.put()
-    new_user.id = str(new_user.key.urlsafe())
-    new_user.put()
-    return new_user.api_key
-    
-def retrieve_api_key(email):
-    for user in User.query(User.email == email):
-        return user.api_key
-    return ''
-
-class User(ndb.Model):
-    id = ndb.StringProperty()
-    email = ndb.StringProperty(required=True)
-    clan_id = ndb.StringProperty()
-    clan_tag = ndb.StringProperty()
-    api_key = ndb.StringProperty(required=True)
-    favorites = ndb.StringProperty(repeated=True)
+from models.user import User
+from helpers.user_helpers import *
 
 class UserHandler(webapp2.RequestHandler):
     def options(self):
@@ -89,6 +54,9 @@ class UserHandler(webapp2.RequestHandler):
         # add player to list
         user.favorites.append(body['player_tag'])
         user.put()
+        # create a player object to DB
+        #routes.player.add_player(body['player_tag'])
+        # send json response
         user_dict = user.to_dict()
         self.response.write(json.dumps(user_dict['favorites']))
 

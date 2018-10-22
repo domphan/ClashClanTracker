@@ -2,59 +2,8 @@ import json
 import webapp2
 from google.appengine.ext import ndb
 from google.appengine.api import urlfetch
-import routes.user
-import routes.clan
-
-
-def player_exists(player_tag):
-    for player in Player.query(Player.tag == player_tag):
-        return True
-    return False
-
-def get_user(api_key):
-    for user in routes.user.User.query(routes.user.User.api_key == api_key):
-        return user.id
-    return False
-
-# used to fetch data from 3rd party API
-def royale_api_get(url):
-    try:
-        access_header = {'auth': ROYALE}
-        selected_item = urlfetch.fetch(
-            url=url,
-            headers=access_header
-        )
-        return selected_item.content
-    except urlfetch.DeadlineExceededError:
-        return ''
-
-
-# Queries database to check if user exists
-def authenticate_user(header_obj):
-    if 'auth' in header_obj:
-        for user in routes.user.User.query(routes.user.User.api_key == header_obj['auth']):
-            return True
-    return False
-
-def get_clan_from_tag(tag):
-    for clan in routes.clan.Clan.query(routes.clan.Clan.clan_tag == tag):
-        return clan.id
-    return ''
-
-PLAYER_LINK = "https://api.royaleapi.com/player/"
-with open("./secret/client_secrets.json") as data_file:
-    data = json.load(data_file)
-
-ROYALE = data["royale_api_key"]
-
-class Player(ndb.Model):
-    id = ndb.StringProperty()
-    tag = ndb.StringProperty(required=True)
-    name = ndb.StringProperty(required=True)
-    trophies = ndb.IntegerProperty(required=True)
-    donations = ndb.IntegerProperty(required=True)
-    donations_delta = ndb.IntegerProperty(required=True)
-    clan = ndb.StringProperty()
+from models.player import Player
+from helpers.player_helpers import *
     
 
 class PlayerHandler(webapp2.RequestHandler):

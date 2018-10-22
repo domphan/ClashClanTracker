@@ -2,93 +2,10 @@ import json
 import webapp2
 from google.appengine.ext import ndb
 from google.appengine.api import urlfetch
-import routes.player
-import routes.user
-
-urlfetch.set_default_fetch_deadline(45)
-
-with open("./secret/client_secrets.json") as data_file:
-    data = json.load(data_file)
-
-ROYALE = data["royale_api_key"]
-REALLY_LARGE_NUMBER = 500000
-
-
-def authenticate_user(header_obj):
-    if 'auth' in header_obj:
-        for user in routes.user.User.query(routes.user.User.api_key == header_obj['auth']):
-            return True
-    return False
-
-
-def get_authenticated_clan(api_key):
-    for user in routes.user.User.query(routes.user.User.api_key == api_key):
-        return user.clan_id
-    return ''
-
-
-def get_authenticated_clan_tag(api_key):
-    for user in routes.user.User.query(routes.user.User.api_key == api_key):
-        return user.clan_tag
-    return ''
-
-
-def royale_api_get(url):
-    access_header = {'auth': ROYALE}
-    selected_item = urlfetch.fetch(
-        url=url,
-        headers=access_header
-    )
-    return selected_item.content
-
-
-def clan_owned_already(clan_tag):
-    for user in routes.user.User.query(routes.user.User.clan_tag == clan_tag):
-        return True
-    return False
-
-
-def get_owner_id(api_key):
-    for user in routes.user.User.query(routes.user.User.api_key == api_key):
-        return user.id
-    return ""
-
-def clear_clan_user(api_key):
-    for user in routes.user.User.query(routes.user.User.api_key == api_key):
-        user.clan_id = None
-        user.clan_tag = None
-        user.put()
-
-
-def get_weakest_link(members):
-    minimum_delta = REALLY_LARGE_NUMBER
-    minimum_player = None
-    for member in members:
-        if member.donations_delta < minimum_delta:
-            minimum_delta = member.donations_delta
-            minimum_player = member
-    return minimum_player.name
-
-
-def get_inactive_players(members):
-    inactive_string = ""
-    for member in members:
-        if member.donations == 0:
-            inactive_string = inactive_string + \
-                member.name.encode('utf-8') + ", "
-    return inactive_string[:-2]
-
-
-class Clan(ndb.Model):
-    id = ndb.StringProperty()
-    owner_id = ndb.StringProperty()
-    name = ndb.StringProperty(required=True)
-    clan_tag = ndb.StringProperty(required=True)
-    member_amount = ndb.IntegerProperty(required=True)
-    members = ndb.StructuredProperty(routes.player.Player, repeated=True)
-    donations_per_week = ndb.IntegerProperty(required=True)
-    inactive_members = ndb.StringProperty()
-    weakest_link = ndb.StringProperty()
+from models.user import User
+from models.clan import Clan
+from models.player import Player
+from helpers.clan_helpers import *
 
 
 class ClanHandler(webapp2.RequestHandler):
@@ -162,14 +79,14 @@ class ClanHandler(webapp2.RequestHandler):
         new_clan.id = str(new_clan.key.urlsafe())
         new_clan.put()
         # add clan to user
-        for user in routes.user.User.query(routes.user.User.api_key == api_key):
+        for user in User.query(User.api_key == api_key):
             user.clan_id = new_clan.id
             user.clan_tag = clan_data['tag'].upper()
             user.put()
         # for each member
         for member in clan_data['members']:
             # create new entity
-            new_member = routes.player.Player(
+            new_member = Player(
                 tag=member['tag'],
                 name=member['name'],
                 trophies=member['trophies'],
@@ -228,7 +145,7 @@ class ClanHandler(webapp2.RequestHandler):
             selected_clan.donations_per_week = clan_data['donations']
             selected_clan.members = []
             for member in clan_data['members']:
-                new_member = routes.player.Player(
+                new_member = Player(
                     tag=member['tag'],
                     name=member['name'],
                     trophies=member['trophies'],
