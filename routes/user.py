@@ -7,12 +7,15 @@ from helpers.user_helpers import *
 
 class UserHandler(webapp2.RequestHandler):
     def options(self):
-        self.response.headers['Access-Control-Allow-Origin'] = "*"
-        self.response.headers['Access-Control-Allow-Headers'] = '*'
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = "*"
         self.response.headers['Access-Control-Allow-Methods'] = '*'
 
     # get should return all of player's favorite
     def get(self):
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = "*"
+        self.response.headers['Access-Control-Allow-Methods'] = '*'
         # check for auth header
         if 'auth' not in self.request.headers:
             self.response.status = 403
@@ -20,7 +23,6 @@ class UserHandler(webapp2.RequestHandler):
             return
         # authenticate user
         user = authenticate_user(self.request.headers)
-        user_dict = user.to_dict()
         if not user:
             self.response.status = 403
             self.response.write("ERROR: INVALID AUTHENTICATION")
@@ -29,6 +31,7 @@ class UserHandler(webapp2.RequestHandler):
             self.response.status = 404
             self.response.write("ERROR: User does not exist")
             return
+        user_dict = user.to_dict()
         if user_dict.get('favorites'):
             self.response.write(json.dumps(user_dict['favorites']))
             return
@@ -38,6 +41,9 @@ class UserHandler(webapp2.RequestHandler):
         
     # post to add players to the user's favorites
     def post(self):
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = "*"
+        self.response.headers['Access-Control-Allow-Methods'] = '*'
         # check for auth header
         if 'auth' not in self.request.headers:
             self.response.status = 403
@@ -70,6 +76,9 @@ class UserHandler(webapp2.RequestHandler):
 
     # delete to remove players or a single player from user's favorites
     def delete(self, player_tag=None):
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = "*"
+        self.response.headers['Access-Control-Allow-Methods'] = '*'
         # check for auth header
         if 'auth' not in self.request.headers:
             self.response.status = 403

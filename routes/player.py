@@ -51,10 +51,12 @@ class PlayerHandler(webapp2.RequestHandler):
 
     # Add a favorite player to user as well
     def post(self):
+        # Authentication check
         if not authenticate_user(self.request.headers):
             self.response.status = 403
             self.response.write("ERROR: cannot be authenticated")
             return
+        # body parameter check
         body = json.loads(self.request.body)
         if 'tag' not in body:
             self.response.status = 400
