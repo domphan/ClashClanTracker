@@ -1,12 +1,14 @@
-from google.appengine.ext import ndb
 import json
+from google.appengine.ext import ndb
 import webapp2
 import os
 from models.user import User
 from helpers.user_helpers import *
 
+PLAYER_LINK = "https://api.royaleapi.com/player/"
+
 class UserHandler(webapp2.RequestHandler):
-    def options(self):
+    def options(self, tag=None):
         self.response.headers['Access-Control-Allow-Origin'] = '*'
         self.response.headers['Access-Control-Allow-Headers'] = "*"
         self.response.headers['Access-Control-Allow-Methods'] = '*'
@@ -19,7 +21,7 @@ class UserHandler(webapp2.RequestHandler):
         # check for auth header
         if 'auth' not in self.request.headers:
             self.response.status = 403
-            self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
+            self.response.write("ERROR: MISSING API KEY IN REQUEST HEADER")
             return
         # authenticate user
         user = authenticate_user(self.request.headers)
@@ -33,7 +35,13 @@ class UserHandler(webapp2.RequestHandler):
             return
         user_dict = user.to_dict()
         if user_dict.get('favorites'):
-            self.response.write(json.dumps(user_dict['favorites']))
+            favorites = {}
+            for item in user_dict['favorites']:
+                favorites[item] = json.loads(rate_limited_fetch(PLAYER_LINK + item))
+                delete_from_obj = ['deckLink', 'currentDeck', 'cards', 'achievements']
+                for key in delete_from_obj:
+                    favorites[item].pop(key)
+            self.response.write(json.dumps(favorites))
             return
         else:
             self.response.write([])
@@ -47,7 +55,7 @@ class UserHandler(webapp2.RequestHandler):
         # check for auth header
         if 'auth' not in self.request.headers:
             self.response.status = 403
-            self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
+            self.response.write("ERROR: MISSING API KEY IN REQUEST HEADER")
             return
         # authenticate user
         user = authenticate_user(self.request.headers)
@@ -69,6 +77,9 @@ class UserHandler(webapp2.RequestHandler):
         user.favorites.append(body['player_tag'])
         user.put()
         # create a player object to DB
+        """
+        FIX THIS
+        """
         #routes.player.add_player(body['player_tag'])
         # send json response
         user_dict = user.to_dict()
@@ -82,7 +93,7 @@ class UserHandler(webapp2.RequestHandler):
         # check for auth header
         if 'auth' not in self.request.headers:
             self.response.status = 403
-            self.repsonse.write("ERROR: MISSING API KEY IN REQUEST HEADER")
+            self.response.write("ERROR: MISSING API KEY IN REQUEST HEADER")
             return
         # authenticate user
         user = authenticate_user(self.request.headers)
