@@ -37,7 +37,10 @@ class UserHandler(webapp2.RequestHandler):
         if user_dict.get('favorites'):
             favorites = {}
             for item in user_dict['favorites']:
-                favorites[item] = json.loads(rate_limited_fetch(PLAYER_LINK + item))
+                while True:
+                    favorites[item] = json.loads(rate_limited_fetch(PLAYER_LINK + item))
+                    if 'name' in favorites[item]:
+                        break
                 delete_from_obj = ['deckLink', 'cards', 'achievements']
                 for key in delete_from_obj:
                     try:
