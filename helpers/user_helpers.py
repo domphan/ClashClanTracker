@@ -53,7 +53,7 @@ def rate_limited_fetch(url):
             url=url,
             headers=access_header
         )
-        if response.status_code == 429:
+        if response.status_code != 200:
             raise Exception('API response: {}'.format(response.status_code))
         return response.content
     except urlfetch.DeadlineExceededError:
