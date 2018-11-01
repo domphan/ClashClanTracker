@@ -34,13 +34,18 @@ class UserHandler(webapp2.RequestHandler):
             self.response.write("ERROR: User does not exist")
             return
         user_dict = user.to_dict()
+        # User has favorited players
+        # Fetch all the properties of those players from RoyaleAPI
         if user_dict.get('favorites'):
             favorites = {}
             for item in user_dict['favorites']:
+                # Handle 404's when the server is being difficult
                 while True:
+                    # Rate limited fetch to 5/sec
                     favorites[item] = json.loads(rate_limited_fetch(PLAYER_LINK + item))
                     if 'name' in favorites[item]:
                         break
+                # Delete these keys and their values from the response
                 delete_from_obj = ['deckLink', 'cards', 'achievements']
                 for key in delete_from_obj:
                     try:
@@ -49,6 +54,7 @@ class UserHandler(webapp2.RequestHandler):
                         pass
             self.response.write(json.dumps(favorites))
             return
+        # User has no favorites
         else:
             self.response.write([])
 

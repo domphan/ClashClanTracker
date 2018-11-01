@@ -16,10 +16,10 @@ with open("secret/client_secrets.json") as data_file:
     data = json.load(data_file)
 CLIENT_ID = data["web"]["client_id"]
 CLIENT_SECRET = data["web"]["client_secret"]
-REDIRECT_URI = "http://localhost:8080/oauth"
+# REDIRECT_URI = "http://localhost:8080/oauth"
 OAUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 STATE_STRING = ""
-#REDIRECT_URI = "https://clashclantracker.appspot.com/oauth"
+REDIRECT_URI = "https://clashclantracker.appspot.com/oauth"
 # [START main_page]
 
 

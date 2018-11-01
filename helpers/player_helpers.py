@@ -10,7 +10,7 @@ from models.clan import Clan
 # Queries database to check if user exists
 def authenticate_user(header_obj):
     if 'auth' in header_obj:
-        for user in User.query(User.api_key == header_obj['auth']):
+        for _ in User.query(User.api_key == header_obj['auth']):
             return True
     return False
 
@@ -21,7 +21,7 @@ def get_clan_from_tag(tag):
     return ''
 
 def player_exists(player_tag):
-    for player in Player.query(Player.tag == player_tag):
+    for _ in Player.query(Player.tag == player_tag):
         return True
     return False
 
