@@ -43,12 +43,6 @@ def royale_api_get(url):
     )
     return selected_item.content
 
-# check if clan is owned already
-def clan_owned_already(clan_tag):
-    for user in User.query(User.clan_tag == clan_tag):
-        return True
-    return False
-
 # get user ID of API key
 def get_owner_id(api_key):
     for user in User.query(User.api_key == api_key):

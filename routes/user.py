@@ -25,6 +25,7 @@ class UserHandler(webapp2.RequestHandler):
             return
         # authenticate user
         user = authenticate_user(self.request.headers)
+        # FIX THIS
         if not user:
             self.response.status = 403
             self.response.write("ERROR: INVALID AUTHENTICATION")

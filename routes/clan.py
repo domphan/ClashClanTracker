@@ -66,10 +66,6 @@ class ClanHandler(webapp2.RequestHandler):
             self.response.status = 400
             self.response.write("ERROR 400: MISSING CLAN TAG")
             return
-        if clan_owned_already(body['tag']):
-            self.response.status = 400
-            self.response.write("ERROR: CLAN OWNED ALREADY")
-            return
         # populate clan data
         clan_json = royale_api_get(
             "https://api.royaleapi.com/clan/" + body['tag'])
