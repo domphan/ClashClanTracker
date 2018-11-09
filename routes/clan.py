@@ -126,14 +126,6 @@ class ClanHandler(webapp2.RequestHandler):
             self.response.status = 400
             self.response.write("ERROR: NO CLAN TAG IN BODY")
             return
-        # check if clan is owned already
-        if clan_owned_already(body['tag']):
-            owner_tag = get_authenticated_clan_tag(api_key)
-            # if it exists, check if the owner is being sent in
-            if owner_tag != body['tag']:
-                self.response.status = 400
-                self.response.write("ERROR: CLAN ALREADY OWNED")
-                return
         # check if clan id in URI
         if not clan_id:
             self.response.status = 400
