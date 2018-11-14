@@ -13,12 +13,12 @@ urlfetch.set_default_fetch_deadline(45)
 class ClanHandler(webapp2.RequestHandler):
     def options(self, clan_id=None):
         self.response.headers['Access-Control-Allow-Origin'] = "*"
-        self.response.headers['Access-Control-Allow-Headers'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
         
     def get(self, tag=None):
         self.response.headers['Access-Control-Allow-Origin'] = "*"
-        self.response.headers['Access-Control-Allow-Headers'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
         # get clan from royale_api
         if tag:
@@ -55,6 +55,9 @@ class ClanHandler(webapp2.RequestHandler):
 
 
     def post(self):
+        self.response.headers['Access-Control-Allow-Origin'] = "*"
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
+        self.response.headers['Access-Control-Allow-Methods'] = '*'
         if not authenticate_user(self.request.headers):
             self.response.status = 403
             self.response.write("ERROR: CANNOT BE AUTHENTICATED")
@@ -112,7 +115,7 @@ class ClanHandler(webapp2.RequestHandler):
 
     def put(self, clan_id=None):
         self.response.headers['Access-Control-Allow-Origin'] = "*"
-        self.response.headers['Access-Control-Allow-Headers'] = '*'
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
         # authenticate user
         if not authenticate_user(self.request.headers):
@@ -167,6 +170,9 @@ class ClanHandler(webapp2.RequestHandler):
 
     # needs to handle removing clans from players
     def delete(self, clan_id=None):
+        self.response.headers['Access-Control-Allow-Origin'] = "*"
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
+        self.response.headers['Access-Control-Allow-Methods'] = '*'
         if not authenticate_user(self.request.headers):
             self.response.status = 401
             self.response.write("ERROR: CANNOT AUTHENTICATE")

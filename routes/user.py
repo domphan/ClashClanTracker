@@ -9,14 +9,16 @@ PLAYER_LINK = "https://api.royaleapi.com/player/"
 
 class UserHandler(webapp2.RequestHandler):
     def options(self, tag=None):
-        self.response.headers['Access-Control-Allow-Origin'] = '*'
-        self.response.headers['Access-Control-Allow-Headers'] = "*"
+
+
+        self.response.headers['Access-Control-Allow-Origin'] = "*"
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
 
     # get should return all of player's favorite
     def get(self):
-        self.response.headers['Access-Control-Allow-Origin'] = '*'
-        self.response.headers['Access-Control-Allow-Headers'] = "*"
+        self.response.headers['Access-Control-Allow-Origin'] = "*"
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
         # check for auth header
         if 'auth' not in self.request.headers:
@@ -62,8 +64,8 @@ class UserHandler(webapp2.RequestHandler):
         
     # post to add players to the user's favorites
     def post(self):
-        self.response.headers['Access-Control-Allow-Origin'] = '*'
-        self.response.headers['Access-Control-Allow-Headers'] = "*"
+        self.response.headers['Access-Control-Allow-Origin'] = "*"
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
         # check for auth header
         if 'auth' not in self.request.headers:
@@ -100,8 +102,8 @@ class UserHandler(webapp2.RequestHandler):
 
     # delete to remove players or a single player from user's favorites
     def delete(self, player_tag=None):
-        self.response.headers['Access-Control-Allow-Origin'] = '*'
-        self.response.headers['Access-Control-Allow-Headers'] = "*"
+        self.response.headers['Access-Control-Allow-Origin'] = "*"
+        self.response.headers['Access-Control-Allow-Headers'] = '*, Authorization, auth'
         self.response.headers['Access-Control-Allow-Methods'] = '*'
         # check for auth header
         if 'auth' not in self.request.headers:
