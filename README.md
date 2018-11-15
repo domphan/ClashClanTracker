@@ -5,7 +5,7 @@
 ## Routes
 URL = https://clashclantracker.appspot.com
 
-__Users__
+### __Users__
 <br>
 **GET**             URL/users
 * Returns a json of the user's favorited players.
@@ -24,7 +24,7 @@ __Users__
 * params: none
 
 
-__Clans__
+### __Clans__
 <br>
 **GET**             URL/clans
 * Returns a user's clan
@@ -46,5 +46,24 @@ __Clans__
 * Deletes a clan in the database based on ID
 * params: none
 
-__Players__
+### __Players__
 <br>
+**GET**             URL/players/:player_id
+* Returns player data based on player_id. Either you can use the database ID to return your player's info from the database, or you can use a game tag to fetch data from RoyaleAPI
+* params: none
+
+**GET**            URL/players
+* Returns all players in the database
+* params: none
+
+**POST**           URL/players
+* Adds a player to the database based on player tag
+* params: ```{tag: "playerTag"}```
+
+**PUT**             URL/players/:player_id
+* Fetches player data from RoyaleAPI and replaces the database entry with new data
+* params: ```{tag: "playerTag"}```
+
+**DEL**             URL/players/:player_id
+* Deletes a player from database based on id
+* params: none
