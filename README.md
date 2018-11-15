@@ -6,7 +6,7 @@
 URL = https://clashclantracker.appspot.com
 
 ## __Users__
-<br>
+
 **GET**             URL/users
 * Returns a json of the user's favorited players.
 * params: none
@@ -25,7 +25,7 @@ URL = https://clashclantracker.appspot.com
 
 
 ## __Clans__
-<br>
+
 **GET**             URL/clans
 * Returns a user's clan
 * params: none
@@ -47,7 +47,7 @@ URL = https://clashclantracker.appspot.com
 * params: none
 
 ## __Players__
-<br>
+
 **GET**             URL/players/:player_id
 * Returns player data based on player_id. Either you can use the database ID to return your player's info from the database, or you can use a game tag to fetch data from RoyaleAPI
 * params: none
