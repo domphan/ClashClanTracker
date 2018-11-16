@@ -1,9 +1,11 @@
 # ClashClanTracker - 
 #### A web API used for gathering and storing clan and player data from Clash Royale
-<hr>
+
 
 ## Routes
 URL = https://clashclantracker.appspot.com
+__All requests must be made with an auth header__
+Set the auth header to the api key you signed up for
 
 ## __Users__
 
